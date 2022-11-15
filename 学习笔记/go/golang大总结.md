@@ -1,16 +1,4 @@
-Go语言出现原因：
 
-随着系统复杂度越来越高，维护的成本越来越高，目前的编程语言有着风格不统一、计算能力不够、处理大并发不够好的特点，因此`缺乏一个足够简洁高效`的编程语言。
-
-- 比如Go语言为了风格统一，有着许多的要求，比如一个包中的变量、方法如果是希望被外部使用的，则要求必须首字母大写；还比如for循环{}的{必须和判断条件一行
-
-  ```go
-  for i := 0;i < 10;i++{//必须要求一行
-      
-  }
-  ```
-
-同样的，计算机的硬件技术更新频繁，性能提升很快，主流的编程语言发展明显落后于硬件，不能够合理的利用多核多CPU的优势来提升软件性能。
 
 Go语言特点：
 
@@ -63,7 +51,7 @@ func main()  {
 >
 > 也可以直接go run xxx.go，可是在实际工程中，肯定要先编译，再执行。
 
-<img src="F:\Typora\Go\pic\2.jpg" alt="2" style="zoom: 67%;" />
+
 
 Golang执行流程分析：
 
@@ -85,9 +73,111 @@ Golang执行流程分析：
 4. 一行最长不超过80个字符，超过的请使用换行展示。
 5. Go设计者思想：一个问题尽量只有一个解决方法
 
+# 基础
+
+变量声明：
+
+```go
+import "fmt"
+
+var a int = 10 // 一种标准格式
+var b = 1.0    // 编译器自动推导类型
+// c := 10 // 必须在函数代码块中声明
+// a := 100 // 推导声明写法的左值变量必须是没有定义过的变量
+func main() {
+	c := 100
+	a, c = c, a       // 允许多个变量同时赋值，赋值顺序是从左到右
+	_, c = a*100, a-1 // 支持匿名变量，匿名变量不占用内存空间，不会分配内存。匿名变量与匿名变量之间也不会因为多次声明而无法使用。
+	fmt.Println(a, b, c)
+}
+```
+
+常量声明：
+
+```go
+const pi = 3.141596
+const (
+    e  = 2.7182818
+    pi = 3.1415926
+) // 批量声明多个常量
+```
+
+类型别名：
+
+```go
+type n_type = old_type
+```
+
+
+
+
+
+比较特殊的字符类型 byte 和 rune：
+
+- 一种是 uint8 类型，或者叫 byte 型，代表了 ASCII 码的一个字符。
+- 另一种是 rune 类型，代表一个 UTF-8 字符，当需要处理中文、日文或者其他复合字符时，则需要用到 rune 类型。rune 类型等价于 int32 类型。
+
+数据类型转换：
+
+Go语言不存在隐式类型转换，因此所有的类型转换都必须显式的声明
+
+```go
+func main() {
+	a := 10
+	b := 1.0
+	//a, b = b, a // 没有隐式转换
+	a, b = int(b), float64(a)
+	fmt.Println(a, b)
+}
+```
+
+指针：
+
+```go
+package main
+
+import "fmt"
+
+func swap(a, b *int) {
+	t := *a
+	*a = *b
+	*b = t
+}
+
+func main() {
+	a := 10
+	b := 100
+	pa := &a
+	fmt.Printf("%d\n", *pa)
+	*pa = b
+	fmt.Printf("%d\n", *pa)
+	a = 1
+	b = 20
+	swap(&a, &b)
+	fmt.Printf("a:%d b:%d\n", a, b)
+
+	// 还可以通过new来创建一个对应类型的指针
+	str := new(string)
+	*str = "hello world"
+	fmt.Println(*str)
+}
+```
+
+变量的声明周期：
+
+- 全局变量：它的生命周期和整个程序的运行周期是一致的；
+- 局部变量：它的生命周期则是动态的，从创建这个变量的声明语句开始，到这个变量不再被引用为止；
+- 形式参数和函数返回值：它们都属于局部变量，在函数被调用的时候创建，函数调用结束后被销毁。
+
+> 在程序的编译阶段，编译器会根据实际情况自动选择在栈或者堆上分配局部变量的存储空间，不论使用 var 还是 new 关键字声明变量都不会影响编译器的选择。
+
+
+
 
 
 # 数组
+
+数组是值类型
 
 数组定义：
 
@@ -143,6 +233,29 @@ func main(){
 
 - 一个数组一旦声明了，长度是固定的，不能动态变化
 - 数组属性类型，默认是值类型
+
+```go
+// 数组声明
+var arr [3]int //默认情况下，数组的每个元素都会被初始化为元素类型对应的零值，对于数字类型来说就是 0
+var arr1 [3]int = [3]int{1, 2, 3}
+var arr2 = [...]int{1, 2, 3, 4, 5} //根据初始化值的个数来计算
+
+func main() {
+	a := 10
+	//arr3 := [a]int{}  // 数组长度必须是常量表达式，因为要在编译阶段确定
+	arr3 := [3]int{} //
+	arr4 := [4]int{} // 数组的长度是数组类型的一部分，因此 arr3 和 arr4 是不同的类型
+	//arr3 = arr4 // 不能将两种不同类型的数组进行赋值
+	arr3 = arr // 是两种类型
+	arr3[2] = a
+
+	for _, c := range arr3 {
+		fmt.Println(c)
+	}
+}
+```
+
+
 
 
 
@@ -200,14 +313,6 @@ func main(){
 
 
 
-
-
-
-
-
-
-
-
 # 切片
 
 注意事项：
@@ -239,7 +344,7 @@ func main(){
 2. 通过make来创建切片
 
    ```go
-   var sl2 []float64 = make([]float64,5,10)
+   var sl2 []float64 = make([]float64,5,10) // 4是元素个数,10是cap，容量大小
    sl2[0] = 10
    sl2[3] = 90
    fmt.Println(sl2)
@@ -256,6 +361,8 @@ func main(){
    for _,val := range sl3{
        fmt.Println(val)
    }
+   var intslice = []int{} // 声明一个空切片，但是注意，此时由于{}，已经分配了内存
+   var emptyslice = []int
    ```
 
 切片使用注意事项：
@@ -276,6 +383,38 @@ func main(){
    ```
 
 3. 可以使用copy对切片进行拷贝，新生成的切片和原来的切片数据空间是独立的，相互不影响。
+
+```go
+c := make([]int, 3, 10)
+// 添加元素--在尾部添加
+c = append(c, 10)
+c = append(c, 21, -1, 2)
+c = append(c, []int{1, 2, 3, 4}...) // 追加切片，切片需要解包
+// 添加元素--在头部添加
+c = append([]int{-1},c...) // 在头部添加一个元素
+c = append([]int{1,2,3,3},c...) // 在头部添加一个切片
+
+// 在第i个位置添加元素 x
+i := 3
+x := 100
+c = append(c[:i],append([]int{x},c[i:]...)...)
+c = append(c[:i],append([]int{1,2,3},c[i:]...)...) // 在第i处添加切片
+
+// 删除元素
+a = []int{1,2,3}
+a = a[1:]  // 删除第一个元素
+a = a[N:] // 删除开头N个元素
+// 删除中间一个元素
+a = append(a[:i],a[i+1:]...)
+// 删除中间N个元素
+a = append(a[:i],a[i+N:]...)
+// 删除尾部1个元素
+a = a[:len(a)-1]
+// 删除尾部N个元素
+a = a[:len(a)-N]
+```
+
+
 
 
 
@@ -323,7 +462,7 @@ func main(){
 
 
 
-# Map
+# map
 
 基本语法：
 
@@ -374,7 +513,7 @@ map的增删改查
 
 `delete(map,key)`，删除map中键为key的key-value
 
-`Mmap = make(map[string][string])`，如果想直接全部删除，可以之间定义一个心新的map，让原来的成为垃圾，被GC回收
+`Mmap = make(map[string][string])`，如果想直接全部删除，可以直接定义一个心新的map，让原来的成为垃圾，被GC回收
 
 查找：
 
@@ -424,6 +563,88 @@ func main(){
 
 
 
+多键索引：
+
+多键索引即多个数值条件可以同时查询
+
+```go
+```
+
+
+
+
+
+sync.Map是效率较高的并发安全的 Map
+
+```go
+package main
+
+import (
+      "fmt"
+      "sync"
+)
+
+func main() {
+
+    var scene sync.Map
+
+    // 将键值对保存到sync.Map
+    scene.Store("greece", 97)
+    scene.Store("london", 100)
+    scene.Store("egypt", 200)
+
+    // 从sync.Map中根据键取值
+    fmt.Println(scene.Load("london"))
+
+    // 根据键删除对应的键值对
+    scene.Delete("london")
+
+    // 遍历所有sync.Map中的键值对
+    scene.Range(func(k, v interface{}) bool {
+
+        fmt.Println("iterate:", k, v)
+        return true
+    })
+
+}
+```
+
+# list
+
+在Go语言中，列表使用 container/list 包来实现，内部的实现原理是双链表，列表能够高效地进行任意位置的元素插入和删除操作。列表与切片和 map 不同的是，列表并没有具体元素类型的限制，因此，列表的元素可以是任意类型，这既带来了便利，也引来一些问题，例如给列表中放入了一个 interface{} 类型的值，取出值后，如果要将 interface{} 转换为其他类型将会发生宕机。
+
+- 双链表支持从队列前方或后方插入元素，分别对应的方法是 PushFront 和 PushBack。
+
+  > 这两个方法都会返回一个 *list.Element 结构，如果在以后的使用中需要删除插入的元素，则只能通过 *list.Element 配合 Remove() 方法进行删除，这种方法可以让删除更加效率化，同时也是双链表特性之一。
+
+- 
+
+```go
+import (
+	"container/list"
+	"fmt"
+)
+
+func main() {
+
+	link1 := list.List{}
+	link1.PushBack(123)
+	link := list.New() // New声明
+
+	link.PushFront("ashdga")
+	handle := link.PushBack("12313")
+	link.InsertAfter("vvvv", handle) // 在12313后面添加元素
+	link.Remove(handle)              // 删除12313
+
+	// 链表遍历
+	for i := link.Front(); i != nil; i = i.Next() {
+		fmt.Println(i.Value)
+	}
+}
+```
+
+
+
 
 
 # 函数
@@ -435,59 +656,59 @@ func 函数名（形参列表）（返回值列表）{
 }
 ```
 
-栈区：Go语言的栈区一般存储基本数据类型，编译器存在一个逃逸分析
-
-堆区：Go语言的堆区一般存储引用数据类型，编译器存在一个逃逸分析
-
-没有基础的童鞋可能会比较迷惑什么是逃逸分析？首先，你需要知道什么是内存逃逸。
-
-内存逃逸：
-
-在C、C++中，常常会忘记分配完内存后忘记释放，从而导致内存泄露，大量的内存泄露对程序来说是致命的。在C语言中，只要不是malloc、全局变量、静态局部变量的都是局部变量，分配在栈区，当函数返回一个局部变量的地址的时候，我们就称作这个变量想要逃逸，即 内存逃逸。
-
-知道了什么是内存逃逸，下面我们简单介绍下什么是逃逸分析。
-
-在Go语言的编译的过程中会进行`逃逸分析`，即分析这个变量，或者说这块内存是否想要逃逸，如果想要逃逸，则将其分配在堆区；否则分配在栈区。
-
-逃逸分析的好处：
-
-- 使得内存分配的更加合理。说白了就是“找准最适合自己呆的地方”，当你使用malloc/new申请一块内存时，编译器发现你在函数退出后没有再使用过它，就会将其存放在栈区。通样的，如果一个普通变量，经过编译器分析当函数推出后其还有在其他地方被引用，那么就会将其分配在堆区。
-- 减少了GC[垃圾回收]的压力。如果变量都分配到堆上，堆不像栈可以自动清理。它会引起Go频繁地进行垃圾回收，而垃圾回收会占用比较大的系统开销
-- 提高效率。堆和栈相比，分配速度显著低于栈，因为堆分配内存需要通过指针一个一个的去找合适的内存块。
-
-Go语言逃逸分析的基本原则：
-
-一个函数返回一个变量的引用，就会发生逃逸。如果函数return之后，确定变量不再被引用，则将其分配到栈上，否则编译器就会将变量分配到堆上。而且，如果一个局部变量非常大，那么它也应该被分配到堆上而不是栈上。
-
-发生内存逃逸的几种情况：
-
-- 局部变量被返回
-
-- interface{}动态类型
-
-  > 很多函数参数为interface{}空接口类型，都会造成逃逸，比如`func Println(a ...interface{}) (n int, err error)`
-  >
-  > `func Printf(format string, a ...interface{}) (n int, err error)`
-
-- 栈空间不足
-
-  > 比如你给栈空间分配一个超大内存的切片，就会发生逃逸
-
-内存逃逸的弊端：
-
-提问：函数传递指针真的比传值效率高吗？
-
-我们知道传递指针可以减少底层值的拷贝，可以提高效率，但是如果拷贝的数据量小，由于指针传递会产生逃逸，可能会使用堆，也可能会增加GC的负担，所以传递指针不一定是高效的。
-
-参考文章：
-
-> https://driverzhang.github.io/post/golang%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E9%80%83%E9%80%B8%E5%88%86%E6%9E%90/
+> 栈区：Go语言的栈区一般存储基本数据类型，编译器存在一个逃逸分析
 >
-> https://zhuanlan.zhihu.com/p/113643434
+> 堆区：Go语言的堆区一般存储引用数据类型，编译器存在一个逃逸分析
+>
+> 没有基础的童鞋可能会比较迷惑什么是逃逸分析？首先，你需要知道什么是内存逃逸。
+>
+> 内存逃逸：
+>
+> 在C、C++中，常常会忘记分配完内存后忘记释放，从而导致内存泄露，大量的内存泄露对程序来说是致命的。在C语言中，只要不是malloc、全局变量、静态局部变量的都是局部变量，分配在栈区，当函数返回一个局部变量的地址的时候，我们就称作这个变量想要逃逸，即 内存逃逸。
+>
+> 知道了什么是内存逃逸，下面我们简单介绍下什么是逃逸分析。
+>
+> 在Go语言的编译的过程中会进行`逃逸分析`，即分析这个变量，或者说这块内存是否想要逃逸，如果想要逃逸，则将其分配在堆区；否则分配在栈区。
+>
+> 逃逸分析的好处：
+>
+> - 使得内存分配的更加合理。说白了就是“找准最适合自己呆的地方”，当你使用malloc/new申请一块内存时，编译器发现你在函数退出后没有再使用过它，就会将其存放在栈区。通样的，如果一个普通变量，经过编译器分析当函数推出后其还有在其他地方被引用，那么就会将其分配在堆区。
+> - 减少了GC[垃圾回收]的压力。如果变量都分配到堆上，堆不像栈可以自动清理。它会引起Go频繁地进行垃圾回收，而垃圾回收会占用比较大的系统开销
+> - 提高效率。堆和栈相比，分配速度显著低于栈，因为堆分配内存需要通过指针一个一个的去找合适的内存块。
+>
+> Go语言逃逸分析的基本原则：
+>
+> 一个函数返回一个变量的引用，就会发生逃逸。如果函数return之后，确定变量不再被引用，则将其分配到栈上，否则编译器就会将变量分配到堆上。而且，如果一个局部变量非常大，那么它也应该被分配到堆上而不是栈上。
+>
+> 发生内存逃逸的几种情况：
+>
+> - 局部变量被返回
+>
+> - interface{}动态类型
+>
+>   > 很多函数参数为interface{}空接口类型，都会造成逃逸，比如`func Println(a ...interface{}) (n int, err error)`
+>   >
+>   > `func Printf(format string, a ...interface{}) (n int, err error)`
+>
+> - 栈空间不足
+>
+>   > 比如你给栈空间分配一个超大内存的切片，就会发生逃逸
+>
+> 内存逃逸的弊端：
+>
+> 提问：函数传递指针真的比传值效率高吗？
+>
+> 我们知道传递指针可以减少底层值的拷贝，可以提高效率，但是如果拷贝的数据量小，由于指针传递会产生逃逸，可能会使用堆，也可能会增加GC的负担，所以传递指针不一定是高效的。
+>
+> 参考文章：
+>
+> > https://driverzhang.github.io/post/golang%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E9%80%83%E9%80%B8%E5%88%86%E6%9E%90/
+> >
+> > https://zhuanlan.zhihu.com/p/113643434
+>
+> 
 
 
-
-好了，上面只是一个小插曲，有兴趣的童鞋也可以继续深入了解。接下来我们继续了解Go语言的函数。
 
 Go函数支持返回多个值，这一点相比于其他语言很有独特性
 
@@ -548,6 +769,12 @@ func SubAdd(a,b int) (int,int){
 
 
 
+
+
+
+
+
+
 init函数
 
 每一个源文件都可以包含一个init函数，该函数会在main函数执行前，被Go运行框架调用，也就是说init会在main函数前被调用。
@@ -570,11 +797,26 @@ init函数使用细节：
 
    > 进一步思考：如果main.go和utils.go都含有变量定义、init函数和main函数，那么执行流程是怎么样的呢？
 
-   <img src="F:\Typora\Go\pic\4.jpg" alt="4" style="zoom:67%;" />
-
 2. init函数的最主要作用，就是完成一些初始化的工作。
 
    > 比如想要在main函数里使用全局变量，则可以先通过init进行初始化
+
+
+
+在Go语言中，函数也是一种类型，可以和其他类型一样保存在变量中
+
+```go
+func fire() {
+    fmt.Println("fire")
+}
+func main() {
+    var f func()
+    f = fire
+    f()
+}
+```
+
+
 
 
 
@@ -623,11 +865,77 @@ init函数使用细节：
   }
   ```
 
+- 匿名函数用作回调函数：
+
+  ```go
+  package main
+  import (
+      "fmt"
+  )
+  // 遍历切片的每个元素, 通过给定函数进行元素访问
+  func visit(list []int, f func(int)) {
+      for _, v := range list {
+          f(v)
+      }
+  }
+  func main() {
+      // 使用匿名函数打印切片内容
+      visit([]int{1, 2, 3, 4}, func(v int) {
+          fmt.Println(v)
+      })
+  }
+  ```
   
+- 通过匿名函数实现操作封装：
+
+  ```go
+  package main
+  
+  import (
+      "flag"
+      "fmt"
+  )
+  
+  var skillParam = flag.String("skill", "", "skill to perform")
+  
+  func main() {
+  
+      flag.Parse()
+  
+      var skill = map[string]func(){
+          "fire": func() {
+              fmt.Println("chicken fire")
+          },
+          "run": func() {
+              fmt.Println("soldier run")
+          },
+          "fly": func() {
+              fmt.Println("angel fly")
+          },
+      }
+  
+      if f, ok := skill[*skillParam]; ok {
+          f()
+      } else {
+          fmt.Println("skill not found")
+      }
+  
+  }
+  ```
+
+
+
+
 
 闭包：
 
+Go语言中闭包是引用了自由变量的函数，被引用的自由变量和函数一同存在，即使已经离开了自由变量的环境也不会被释放或者删除，在闭包中可以继续使用这个自由变量
+
 > 闭包就是一个函数和与其相关的引用环境组合的一个整体
+>
+> ![img](http://c.biancheng.net/uploads/allimg/180814/1-1PQ41F62I51.jpg)
+>
+> 一个函数类型就像结构体一样，可以被实例化，函数本身不存储任何信息，只有与引用环境结合后形成的闭包才具有“记忆性”，函数是编译期静态的概念，而闭包是运行期动态的概念。
 
 ```go
 //累加器闭包 返回一个函数 func(int)int
@@ -712,6 +1020,31 @@ func main(){
 > 11
 > 10
 
+应用场景：
+
+- 使用延迟并发解锁
+- 使用延迟释放文件句柄
+
+
+
+宕机：panic
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    defer fmt.Println("宕机后要做的事情1")
+    defer fmt.Println("宕机后要做的事情2")
+    panic("宕机")
+}
+```
+
+
+
+
+
 
 
 函数参数传递方式：
@@ -736,9 +1069,7 @@ func main(){
 
 # 面向对象
 
-Golang和传统的面向对象编程有所区别，并不是纯粹的面向对象语言。
-
-比如C++、java的面向对象都是基于类的，可是Go没有类，Go是基于struct来实现OOP特性的。
+C++、java的面向对象都是基于类的，可是Go没有类，Go是基于struct来实现OOP特性的。
 
 Go去掉了传统的OOP语言的方法重载、构造函数、析构函数等，但是Go仍然有着面向对象编程的继承、封装和多态的特性，只是实现方式比较不同。
 
@@ -749,13 +1080,20 @@ Go去掉了传统的OOP语言的方法重载、构造函数、析构函数等，
 如下：
 
 ```go
+// 结构体定义
 type Structname struct{
     field1 type  //字段/属性 默认值为0
     field2 type 
 }
+
+type Player struct{
+    Name string
+    HealthPoint int
+    MagicPoint int
+}
 ```
 
-我们进行一个简单的实操：
+结构体实例化：
 
 ```go
 func main(){
@@ -773,11 +1111,95 @@ func main(){
 	(*person3).Age = 22
 	person3.Skill = "playing"  //编译器底部进行了优化，会将person3.Skill => (*person3).Skill
 
-	fmt.Println(person1)
-	fmt.Println(person2)
-	fmt.Println(person3)
+  tank := new(Player)
+  tank.Name = "Canon"
+  tank.HealthPoint = 300
 }
 ```
+
+在 C/C++ 语言中，使用 new 实例化类型后，访问其成员变量时必须使用`->`操作符。
+
+在Go语言中，访问结构体指针的成员变量时可以继续使用`.`，这是因为Go语言为了方便开发者访问结构体指针的成员变量，使用了语法糖（Syntactic sugar）技术，将 ins.Name 形式转换为 (*ins).Name。
+
+取结构体的地址实例化：
+
+```go
+type Command struct {
+    Name    string    // 指令名称
+    Var     *int      // 指令绑定的变量
+    Comment string    // 指令的注释
+}
+
+var version int = 1
+
+cmd := &Command{}
+cmd.Name = "version"
+cmd.Var = &version
+cmd.Comment = "show version"
+```
+
+结构体初始化：
+
+```go
+ins := 结构体类型名{
+    字段1: 字段1的值,
+    字段2: 字段2的值,
+    …
+}
+
+// 键值对初始化结构体
+type People struct {
+    name  string
+    child *People
+}
+relation := &People{
+    name: "爷爷",
+    child: &People{
+        name: "爸爸",
+        child: &People{
+                name: "我",
+        },
+    },
+}
+```
+
+匿名结构体：
+
+```go
+package main
+
+import (
+    "fmt"
+)
+
+// 打印消息类型, 传入匿名结构体
+func printMsgType(msg *struct {
+    id   int
+    data string
+}) {
+
+    // 使用动词%T打印msg的类型
+    fmt.Printf("%T\n", msg)
+}
+
+func main() {
+
+    // 实例化一个匿名结构体
+    msg := &struct {  // 定义部分
+        id   int
+        data string
+    }{  // 值初始化部分
+        1024,
+        "hello",
+    }
+
+    printMsgType(msg)
+}
+```
+
+
+
+
 
 说到面向对象怎么可能只有对象的属性没有对象的方法呢？
 
