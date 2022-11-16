@@ -1197,13 +1197,34 @@ func main() {
 }
 ```
 
+结构体模拟构造函数重载：
 
+```go
+type Dog struct {
+	name string
+	color string
+}
 
+// 定义用名字构造小狗
+func newDogByName(name string) *Dog{
+	return &Dog{
+		name: name,
+	}
+}
 
+// 定义用颜色构造小狗
+func newDogByColor(color string) *Dog{
+	return &Dog{
+		color: color,
+	}
+}
+```
+
+方法：
 
 说到面向对象怎么可能只有对象的属性没有对象的方法呢？
 
-Go中的方法是作用在指定的数据类型上的，因此自定义类型都可以有方法，而不仅仅struct
+Go中的方法是作用在指定的数据类型上的，因此自定义类型都可以有方法，而不仅仅是struct
 
 ```go
 type Person struct{
@@ -1221,7 +1242,7 @@ func main(){
 	//创建结构体变量
 	//方式1
 	person1 := Person{"ywh",22,"study"}
-      //Person方法只能通过Person类变量来调用
+  //Person方法只能通过Person类变量来调用
 	person1.introduce()
 }
 ```
@@ -1234,6 +1255,7 @@ func main(){
    //传递的是结构体指针
    func (p *Person)ChangeSkill(s string){
    	(*p).Skill = s
+     // p.Skill = s // 语法糖 这样写也可以
    	fmt.Printf("my new skill : %s!\n",p.Skill)
    }
    ```
@@ -1256,8 +1278,7 @@ func main(){
 
 
 
-
-方法和函数的区别：
+**方法和函数的区别**：
 
 1. 调用方式不一样
 
@@ -1356,48 +1377,54 @@ func (p *person)GetNmae()string{
 
 继承可以解决代码复用的问题，当多个结构体存在相同的属性和方法时，可以从这些结构体中抽象出结构体，在该结构体中定义这些相同的属性和方法。此时其他的结构体不需要重新定义这些属性，只需嵌套一个结构体饥即可。
 
-<img src="F:\Typora\Go\pic\7.jpg" alt="7" style="zoom:67%;" />
-
 优点：代码的复用性提高了，代码的扩展性和可维护性提高了。
 
 ```go
-type person struct{
-	Name string 
-	Age int 
+type person struct {
+	Name  string
+	Age   int
 	Skill string
 }
 
-type student struct{
-	per person  //嵌套了person结构体
+func (p person) Introduce() {
+	fmt.Printf("Hi,I am %s, %d years old,like %s!\n", p.Name, p.Age, p.Skill)
+}
+
+func (p *person) ChangeSkill(s string) {
+	(*p).Skill = s
+	fmt.Printf("my new skill : %s!\n", p.Skill)
+}
+
+// person构造函数
+func NewPerson(n, s string, a int) *person {
+	return &person{
+		Name:  n,
+		Skill: s,
+		Age:   a,
+	}
+}
+
+type student struct {
+	person    //嵌套了person结构体
 	studyAddr string
 }
 
-func (p person)Introduce(){
-	fmt.Printf("Hi,I am %s, %d years old,like %s!\n",p.Name,p.Age,p.Skill)
+func (stu *student) Study() {
+	fmt.Printf("I am working in %s\n", stu.studyAddr)
 }
 
-func (p *person)ChangeSkill(s string){
-	(*p).Skill = s
-	fmt.Printf("my new skill : %s!\n",p.Skill)
-}
-
-func (stu *student)Study(){
-	fmt.Printf("I am working in %s\n",stu.studyAddr)
-}
-
-func NewPerson(n,s string,a int) *person{
-	return &person{
-		Name : n,
-		Skill : s,
-		Age : a,
-	}
-}
-
-func NewStudent(pers *person,stuAddr string)*student{
+// student构造函数
+func NewStudent(pers *person, stuAddr string) *student {
 	return &student{
-		per : *pers,
-		studyAddr : stuAddr,
+		person:    *pers,
+		studyAddr: stuAddr,
 	}
+}
+func main() {
+	stu1 := NewStudent(&person{"ywh", 22, "ml"}, "shanghai")
+	stu1.Study()
+	stu1.ChangeSkill("study")
+	stu1.Introduce()
 }
 ```
 
@@ -1443,8 +1470,65 @@ type 接口名 interface{
 }
 ```
 
+> - 接口类型名：使用 type 将接口定义为自定义的类型名。Go语言的接口在命名时，一般会在单词后面添加 er，如有写操作的接口叫 Writer，有字符串功能的接口叫 Stringer，有关闭功能的接口叫 Closer 等。
+> - 方法名：当方法名首字母是大写时，且这个接口类型名首字母也是大写时，这个方法可以被接口所在的包（package）之外的代码访问。
+> - 参数列表、返回值列表：参数列表和返回值列表中的参数变量名可以被忽略
+
 - 接口里的所有方法都没有方法体，即接口的方法都是没有实现的方法。体现了程序设计的多态和高内聚低耦合的思想
 - Go语言中的接口，不需要显示的实现。只要一个变量，含有接口类型中的所有方法，那么这个变量就实现了这个接口。
+- 两个类型之间的实现关系不需要在代码中显式地表示出来。Go语言中没有类似于 implements 的关键字。 Go编译器将自动在需要的时候检查两个类型之间的实现关系。
+
+实现接口的条件：
+
+- 接口的方法与实现接口的类型方法格式一致
+
+  > 在类型中添加与接口签名一致的方法就可以实现该方法。签名包括方法中的名称、参数列表、返回参数列表。也就是说，只要实现接口类型中的方法的名称、参数列表、返回参数列表中的任意一项与接口要实现的方法不一致，那么接口的这个方法就不会被实现。
+
+- 接口中所有方法均被实现
+
+```go
+package main
+
+import (
+    "fmt"
+)
+
+// 定义一个数据写入器
+type DataWriter interface {
+    WriteData(data interface{}) error
+}
+
+// 定义文件结构，用于实现DataWriter
+type file struct {
+}
+
+// 实现DataWriter接口的WriteData方法
+func (d *file) WriteData(data interface{}) error {
+
+    // 模拟写入数据
+    fmt.Println("WriteData:", data)
+    return nil
+}
+
+func main() {
+
+    // 实例化file
+    f := new(file)
+
+    // 声明一个DataWriter的接口
+    var writer DataWriter
+
+    // 将接口赋值f，也就是*file类型
+    writer = f
+
+    // 使用DataWriter接口进行数据写入
+    writer.WriteData("data")
+}
+```
+
+接口的nil判断：
+
+nil 在 Go语言中只能被赋值给指针和接口。接口在底层的实现有两个部分：type 和 data。在源码中，显式地将 nil 赋值给接口时，接口的 type 和 data 都将为 nil。此时，接口与 nil 值判断是相等的。但如果将一个带有类型的 nil 赋值给接口时，只有 data 为 nil，而 type 不为 nil，此时，接口与 nil 判断将不相等。
 
 #### 空接口
 
@@ -1512,6 +1596,11 @@ func main(){
 >
 > []interface {} , [{Kety 1} {mike boy} asfkhkajsd 100 3.41]
 
+空接口的值比较：
+
+- 类型不同的空接口间的比较结果不相同
+- 不能比较空接口中的动态值
+
 
 
 一些注意事项：
@@ -1545,6 +1634,21 @@ func main(){
 5. interfacc 类型默认是一个指针(引用类型)，如果没有对interface 初始化就使用，那么会输出nil
 
 6. 空接口interface{}没有任何方法，所以所有类型都实现了空接口，即我们可以把任何一个变量赋值给空接口
+
+7. 接口变量必须初始化才有意义，没有初始化的接口变量的默认值是nil，没有任何意义。
+
+8. 非空接口的底层数据结构是 iface
+
+   > ```go
+   > type iface struct {
+   >     tab *itab                //itab 存放类型及方法指针信息
+   >     data unsafe.Pointer      //数据信息
+   > }
+   > // itab：用来存放接口自身类型和绑定的实例类型及实例相关的函数指针.
+   > // 数据指针 data：指向接口绑定的实例的副本，接口的初始化也是一种值拷贝。
+   > ```
+   >
+   > 
 
 
 
@@ -1757,7 +1861,7 @@ G(Goroutine)：协程（轻量级用户线程）
 
 ![2021-10-20_201408](golang大总结.assets/2021-10-20_201408.jpg)
 
-什么是协程goroutine？
+### goroutinue
 
 协程：可以理解为轻量级的线程
 
@@ -1767,6 +1871,8 @@ G(Goroutine)：协程（轻量级用户线程）
 4. 逻辑态，资源消耗相对小
 
 > Golang的协程机制是重要的特点，可以轻松开启上万个协程。Go具有并发上的优势相对于其他编程语言
+>
+> 一个线程上可以跑多个协程
 
 ```go
 import(
@@ -1774,6 +1880,7 @@ import(
     "strconv"
     "time"
 )
+// 使用普通函数创建goroutine
 func test(){
 	for i := 0;i < 10;i++{
 		fmt.Println("this is test()" + strconv.Itoa(i))
@@ -1782,16 +1889,14 @@ func test(){
 }
 
 func main(){
-	go test()
+	go test() // 开启一个独立的并发线程
 
 	for i := 0;i < 10;i++{
 		fmt.Println("this is main()" + strconv.Itoa(i))
 		time.Sleep(time.Second)
 	}
 }
-```
-
-```
+/*
 this is main()0
 this is test()0
 this is main()1
@@ -1812,6 +1917,16 @@ this is test()8
 this is main()8
 this is test()9
 this is main()9
+*/
+```
+
+```go
+// 使用匿名函数创建goroutine
+go func(i int) {
+  for j := 0; j < i; j++ {
+    fmt.Println(j)
+  }
+}(10) // 调用参数列表
 ```
 
 
@@ -1829,9 +1944,17 @@ runtime.GOMAXPROCS(num)
 
 
 
-管道channel：
+### channel
 
-当我们在使用协程时，往往需要协程间的通信，此时就需要用到channel 管道了。
+当我们在使用协程时，往往需要**协程间的通信**，此时就需要用到channel 管道了。
+
+定义一个 channel 时，也需要定义发送到 channel 的值的类型，注意，必须使用 make 创建 channel，代码如下所示：
+
+```go
+ci := make(chan int)
+cs := make(chan string)
+cf := make(chan interface{})
+```
 
 比如我们想要并发执行求取200个数每个数的阶乘，并保存在map中：
 
@@ -1853,7 +1976,7 @@ func main(){
 	for i := 0;i < 100;i++{
 		go test(i)
 	}
-    //等待协程完成任务
+  //等待协程完成任务
 	time.Sleep(time.Second * 4)
 	for i,v := range Map{
 		fmt.Printf("map[%d]=%d\n",i,v)
@@ -1861,12 +1984,13 @@ func main(){
 }
 ```
 
-> 此时就会导致==写==冲突的问题
+> 此时就会导致 「写」冲突的问题
 
 解决方法：
 
 1. 全局变量的互斥锁
 2. 使用管道channel解决
+3. 使用并发锁 sync.Map
 
 
 
@@ -1910,7 +2034,7 @@ func main(){
 
 使用管道channel：
 
-channel 本质是一个队列，先进先出。并且channel本身就是线程安全的。
+channel 本质是一个队列，先进先出。并且channel本身就是线程安全的,channel空值为nil，是引用类型
 
 > channel是有类型的，一个string的channel只能存放string类型数据
 
@@ -1939,7 +2063,7 @@ func main(){
 	m["北京"] = 1
 	m["上海"] = 2
 	allChan <- m
-    fmt.Printf("chan len :%v chan cap :%v\n",len(allChan),cap(allChan))
+  fmt.Printf("chan len :%v chan cap :%v\n",len(allChan),cap(allChan))
 	//将管道中的数据依次拿出
 	tmp1 := <- allChan
 	tmp2 := <- allChan
@@ -1956,6 +2080,41 @@ chan len :4 chan cap :10
 {ywh 10 1000-10-10 1231.124 playing} 10 hello golang! map[上海:2 北京:1]
 chan len :0 chan cap :10
 ```
+
+- 发送将持续阻塞直到数据被接收
+
+- 通道的数据接收写法有四种
+
+  - 阻塞式接收
+
+    ```go
+    //阻塞模式接收数据时，将接收变量作为<-操作符的左值，格式如下：
+    data := <-ch
+    ```
+
+  - 非阻塞式接收
+
+    ```go
+    // 使用非阻塞方式从通道接收数据时，语句不会发生阻塞，格式如下：
+    data, ok := <-ch
+    ```
+
+  - 接受任意数据，忽略接收的数据
+
+    ```go
+    // 阻塞接收数据后，忽略从通道返回的数据，格式如下：
+    <-ch
+    ```
+
+  - 循环接收
+
+    ```go
+    // 通道的数据接收可以借用 for range 语句进行多个元素的接收操作，格式如下：
+    for data := range ch {
+    }
+    ```
+
+
 
 如果我们后续想要访问`tmp1的Name成员变量`呢？
 
@@ -1978,6 +2137,39 @@ fmt.Printf("tmp1.Name :%v\n",tmp_person.Name)
 close(allChan)
 ```
 
+- 给被关闭的通道发送数据将会触发panic
+
+- 从已经关闭的通道接收数据不会发生阻塞
+
+  > 从已经关闭的通道接收数据或者正在接收数据时，将会接收到通道类型的零值，然后停止阻塞并返回。
+  >
+  > ```go
+  > func main() {
+  >     // 创建一个整型带两个缓冲的通道
+  >     ch := make(chan int, 2)
+  >    
+  >     // 给通道放入两个数据
+  >     ch <- 0
+  >     ch <- 1
+  >    
+  >     // 关闭缓冲
+  >     close(ch)
+  >     // 遍历缓冲所有数据, 且多遍历1个
+  >     for i := 0; i < cap(ch)+1; i++ {
+  >    
+  >         // 从通道中取出数据
+  >         v, ok := <-ch
+  >        
+  >         // 打印取出数据的状态
+  >         fmt.Println(v, ok)
+  >     }
+  > }
+  > ```
+  >
+  > 
+
+
+
 **管道的遍历**：
 
 channel支持for range的方式遍历，但注意：
@@ -1999,6 +2191,33 @@ func main(){
 	}
 }
 ```
+
+管道的多路复用：
+
+在使用通道时，想同时接收多个通道的数据是一件困难的事情。通道在接收数据时，如果没有数据可以接收将会发生阻塞。Go语言中提供了 select 关键字，可以同时响应多个通道的操作。
+
+```go
+select{
+    case 操作1:
+        响应操作1
+    case 操作2:
+        响应操作2
+    …
+    default:
+        没有操作情况
+}
+```
+
+- 响应操作1、响应操作2：当操作发生时，会执行对应 case 的响应操作。
+- default：当没有任何操作时，默认执行 default 中的语句。
+
+select 做的就是：选择处理列出的多个通信情况中的一个。
+
+- 如果都阻塞了，会等待直到其中一个可以处理
+- 如果多个可以处理，随机选择一个
+- 如果没有通道操作可以处理并且写了 default 语句，它就会执行：default 永远是可运行的（这就是准备好了，可以执行）。
+
+
 
 
 
@@ -2516,17 +2735,81 @@ hello golang!
 main is running!
 ```
 
+### 互斥锁和读写互斥锁
+
+Mutex 是最简单的一种锁类型，同时也比较暴力，当一个 goroutine 获得了 Mutex 后，其他 goroutine 就只能乖乖等到这个 goroutine 释放该 Mutex。
+
+RWMutex 相对友好些，是经典的单写多读模型。在读锁占用的情况下，会阻止写，但不阻止读，也就是多个 goroutine 可同时获取读锁（调用 RLock() 方法；而写锁（调用 Lock() 方法）会阻止任何其他 goroutine（无论读和写）进来，整个锁相当于由该 goroutine 独占。
+
+> RWMutex其实组合了Mutex
+
+
+
+### 等待组
+
+了可以使用通道（channel）和互斥锁进行两个并发程序间的同步外，还可以使用等待组进行多个任务的同步，等待组可以保证在并发环境中完成指定数量的任务。
+
+sync.WaitGroup（等待组）类型中，每个 sync.WaitGroup 值在内部维护着一个计数，此计数的初始默认值为零。
+
+相关方法：
+
+| 方法名                          | 功能                                    |
+| ------------------------------- | --------------------------------------- |
+| (wg * WaitGroup) Add(delta int) | 等待组的计数器 +1                       |
+| (wg * WaitGroup) Done()         | 等待组的计数器 -1                       |
+| (wg * WaitGroup) Wait()         | 当等待组计数器不等于 0 时阻塞直到变 0。 |
+
+- 方法调用 wg.Done() 和 wg.Add(-1) 是完全等价的。
+- 如果一个 wg.Add(delta) 或者 wg.Done() 调用将 wg 维护的计数更改成一个负数，一个恐慌将产生。
+- 当一个协程调用了 wg.Wait() 时，
+  - 如果此时 wg 维护的计数为零，则此 wg.Wait() 此操作为一个空操作（noop）；
+  - 否则（计数为一个正整数），此协程将进入阻塞状态。当以后其它某个协程将此计数更改至 0 时（一般通过调用 wg.Done()），此协程将重新进入运行状态（即 wg.Wait() 将返回）。
+
+```go
+
+func main() {
+    // 声明一个等待组
+    var wg sync.WaitGroup
+    // 准备一系列的网站地址
+    var urls = []string{
+        "http://www.github.com/",
+        "https://www.qiniu.com/",
+        "https://www.golangtc.com/",
+    }
+    // 遍历这些地址
+    for _, url := range urls {
+        // 每一个任务开始时, 将等待组增加1
+        wg.Add(1)
+        // 开启一个并发
+        go func(url string) {
+            // 使用defer, 表示函数完成时将等待组值减1
+            defer wg.Done()
+            // 使用http访问提供的地址
+            _, err := http.Get(url)
+            // 访问完成后, 打印地址和可能发生的错误
+            fmt.Println(url, err)
+            // 通过参数传递url地址
+        }(url)
+    }
+    // 等待所有的任务完成
+    wg.Wait()
+    fmt.Println("over")
+}
+```
+
 
 
 
 
 #  反射
 
+反射是指在程序运行期对程序本身进行访问和修改的能力。程序在编译时，变量被转换为内存地址，变量名不会被编译器写入到可执行部分。在运行程序时，程序无法获取自身的信息。
+
+支持反射的语言可以在程序编译期将变量的反射信息，如字段名称、类型信息、结构体信息等整合到可执行文件中，并给程序提供接口访问反射信息，这样就可以在程序运行期获取类型的反射信息，并且有能力修改它们。
+
 Go语言提供了一种机制在**运行时更新和检查变量的值、调用变量的方法和变量支持的内在操作**，但是在编译时并不知道这些变量的具体类型，这种机制被称为反射。
 
 > 支持反射的语言(java、C#等，Go利用了reflect包)可以在程序编译期将变量的反射信息，如字段名称、类型信息、结构体信息等整合到可执行文件中，并给程序提供接口访问反射信息，这样就可以在程序运行期获取类型的反射信息，并且有能力修改它们。
-
-
 
 既然Go是利用了reflect包来访问程序的反射信息，那么我们就先看下reflect包来了解一下。
 
@@ -2924,14 +3207,6 @@ func main(){
 30
 ```
 
-
-
-
-
-
-
-
-
 # 包
 
 包的本质：创建不同的文件夹，来存放程序文件。
@@ -3025,7 +3300,7 @@ func Sayhello(){//头字母需要大写，如果想在其他包使用
 
 实际开发中我们往往需要对一些常用的数据类型进行转换。熟练掌握能让我们编写程序时事半功倍。
 
-## fmt.Sprintf() [推荐]
+#### fmt.Sprintf() [推荐]
 
 Sprintf根据format参数生成格式化的字符串，并返回该字符串
 
@@ -3035,11 +3310,11 @@ Sprintf根据format参数生成格式化的字符串，并返回该字符串
 
 
 
-## string和int类型之间的转换
+#### string和int类型之间的转换
 
 > 这个应该是平常开发中最容易遇到的类型转换了
 
-### `Itoa()`:int->string
+`Itoa()`:int->string
 
 Itoa() 函数用于将 int 类型数据转换为对应的字符串类型
 
@@ -3063,7 +3338,7 @@ func main() { /*{不能单独占一行*/
 >
 > str type:string
 
-### `Atoi()`:string->int
+`Atoi()`:string->int
 
 Atoi() 函数用于将字符串类型的整数转换为 int 类型.
 
@@ -3100,9 +3375,9 @@ func main() { /*{不能单独占一行*/
 > 转换成功! value:69 type:int
 > 转换失败! i6a
 
-## Parse系列
+#### Parse系列
 
-### `ParseBool()`: string->bool
+`ParseBool()`: string->bool
 
 ParseBool() 函数用于将字符串转换为 bool 类型的值，它只能接受 1、0、t、f、T、F、true、false、True、False、TRUE、FALSE，其它的值均返回错误。
 
@@ -3135,7 +3410,7 @@ func main() { /*{不能单独占一行*/
 > 转换失败! 2
 > 转换成功! value:true type:bool
 
-### `ParseInt()`: string->int
+`ParseInt()`: string->int
 
 ParseInt() 函数用于返回字符串表示的整数值（可以包含正负号）
 
@@ -3177,9 +3452,7 @@ func main() { /*{不能单独占一行*/
 
 注：ParseUnit()与ParseInt()函数类似，只是不接受正负号
 
-
-
-### `ParseFloat()`: string->float
+`ParseFloat()`: string->float
 
 ParseFloat() 函数用于返回字符串表示的浮点数
 
@@ -3211,9 +3484,9 @@ func main() { /*{不能单独占一行*/
 >
 > value:1846.340000 type:float64
 
-## Format系列
+#### Format系列
 
-### FormatBool(): bool -> string
+FormatBool(): bool -> string
 
 FormatBool() 函数可以一个 bool 类型的值转换为对应的字符串类型
 
@@ -3236,7 +3509,7 @@ func main() { /*{不能单独占一行*/
 >
 > value:false type:string
 
-### FormatInt(): int -> string
+FormatInt(): int -> string
 
 FormatInt() 函数用于将整型数据转换成指定进制并以字符串的形式返回
 
@@ -3264,7 +3537,7 @@ func main() { /*{不能单独占一行*/
 
 > 注：FormatUint() 函数与 FormatInt() 函数的功能类似，但是参数 i 必须是无符号的 uint64 类型，函数签名如下。`func FormatUint(i uint64, base int) string`
 
-### FormatFloat(): float -> string
+FormatFloat(): float -> string
 
 FormatFloat() 函数用于将浮点数转换为字符串类型.
 
@@ -3296,7 +3569,7 @@ func main() { /*{不能单独占一行*/
 >value:324.2148 type:string
 >value:3.24215e+02 type:string
 
-## Append系列
+#### Append系列
 
 Append 系列函数用于将指定类型转换成字符串后追加到一个切片中.包含 AppendBool()、AppendFloat()、AppendInt()、AppendUint().
 
@@ -3538,4 +3811,80 @@ func PathExists(filename string)(bool,error){
 	return false,err
 }
 ```
+
+
+
+
+
+# 单例模式实现
+
+懒汉式：
+
+```go
+import "sync"
+
+type Tool struct {
+	values int
+}
+
+var instance *Tool
+
+var lock sync.Mutex
+
+func GetInstance() *Tool {
+  if instance == nil{
+    lock.Lock()
+    defer lock.Unlock()
+    if instance == nil {
+      instance = new(Tool)
+    }
+  }
+	return instance
+}
+```
+
+```go
+// 通过 sync.Once确保创建对象的方法只执行一次 本质也是双重检查
+func GetInstance() *Tool {
+  once.Do(func(){
+    instance = new(Tool)
+  })
+	return instance
+}
+```
+
+饿汉式：
+
+```go
+// init函数初始化方式
+type config struct {
+
+}
+
+var cfg *config
+
+func init() {
+	cfg = new(config)
+}
+
+func NewConfig() *config{
+	return cfg
+}
+```
+
+```go
+// 全局变量方式
+type config struct {
+}
+
+var cfg *config = new(config)
+
+func NewConfig() *config {
+	return cfg
+}
+```
+
+
+
+
 
