@@ -568,6 +568,7 @@ func main(){
 多键索引即多个数值条件可以同时查询
 
 ```go
+
 ```
 
 
@@ -1956,6 +1957,10 @@ cs := make(chan string)
 cf := make(chan interface{})
 ```
 
+
+
+
+
 比如我们想要并发执行求取200个数每个数的阶乘，并保存在map中：
 
 ```go
@@ -2047,6 +2052,8 @@ var perStructChan chan Person //Person是一个结构体类型
 ```
 
 说明：channel 是引用类型，必须初始化才能够写入数据（即make后才能使用）
+
+<img src="golang大总结.assets/image-20230114195814691.png" alt="image-20230114195814691" style="zoom:50%;" />
 
 ```go
 //管道的基本使用
@@ -2735,6 +2742,14 @@ hello golang!
 main is running!
 ```
 
+
+
+应用实例3：
+
+A子协程发送数字0-9，B子协程计算输入数字的平方。
+
+
+
 ### 互斥锁和读写互斥锁
 
 Mutex 是最简单的一种锁类型，同时也比较暴力，当一个 goroutine 获得了 Mutex 后，其他 goroutine 就只能乖乖等到这个 goroutine 释放该 Mutex。
@@ -2795,6 +2810,30 @@ func main() {
     wg.Wait()
     fmt.Println("over")
 }
+```
+
+
+
+```go
+func main() {
+	var wg sync.WaitGroup
+	wg.Add(5)
+	for i := 0;i < 5;i++{
+		go func(j int) {
+			defer wg.Done()
+			fmt.Println("hello ", j)
+		}(i)
+	}
+	wg.Wait()
+}
+```
+
+```
+hello  1
+hello  2
+hello  4
+hello  0
+hello  3
 ```
 
 
@@ -3946,6 +3985,119 @@ func NewConfig() *config {
 ```
 
 
+
+# 依赖管理
+
+GOPATH => GO Vendor => GO Module
+
+**环境变量$GOPATH**
+
+- bin 项目编译的二进制稳健
+
+- pkg 项目编译的中间产物，加速编译
+
+- src 项目源码
+
+  > 项目代码直接依赖src下的代码
+
+弊端：
+
+- 项目A和B依赖于某一个package的不同版本
+
+  <img src="golang大总结.assets/image-20230116150543414.png" alt="image-20230116150543414" style="zoom:50%;" />
+
+**GO Vendor**
+
+项目目录下增加了vendor文件夹，所有依赖包副本形式放在 $ProjectRoot/vendor，项目依赖首先会从vendor文件夹下寻址，找不到再去GOPATH下寻找，GO Vendor通过每个项目引入一份依赖的副本，解决了多个项目需要同一个package依赖的冲突问题。
+
+弊端：
+
+无法控制依赖的版本。更新项目又可能出现依赖冲突，导致编译出错。
+
+<img src="golang大总结.assets/image-20230116151118174.png" alt="image-20230116151118174" style="zoom:50%;" />
+
+**GO Module**
+
+- 通过 go.mod 文件管理依赖包版本
+- 通过 go get/go mod 指令工具管理依赖包
+
+依赖管理三要素：
+
+- 配置文件，描述依赖 go.mod
+- 中心仓库管理依赖库 Proxy
+- 本地工具 go get/mod
+
+
+
+
+
+# 性能优化
+
+Slice优化建议:
+
+- 尽可能在使用make()初始化切片时提供容量信息
+
+  ```go
+  //bad
+  data := make([]int,0)   // len(data) = 0
+  //good
+  data := make([]int,0,5) // len(data) = 0, cap(data) = 5
+  ```
+
+  切片本质：一个数组指针、长度和容量属性
+
+- 大内存未释放，即在已有切片基础上创建切片，不会创建新的底层数组。应该使用 copy 替代
+
+  ```go
+  func GetLastByCopy(origin []int) []int {
+  	result := make([]int, 2)
+  	copy(result, origin[len(origin)-2:])
+  	return result
+  }
+  ```
+
+Map优化建议：
+
+- 预分配内存：减少内存拷贝和Rehash的消耗
+
+  ```go
+  data := make(map[int]int,5)
+  ```
+
+字符串处理优化建议：
+
+- 使用strings.Builder 处理常见的字符串拼接，strings.Builder底层时 []byte数组
+
+  ```go
+  func StrBuilder(n int,str string) string{
+  	var builder strings.Builder
+  	for i := 0; i < n; i++ {
+  		builder.WriteString(str)
+  	}
+  	return builder.String()
+  }
+  ```
+
+空结构体优化建议：
+
+空结构体struct{}实例不占据任何的内存空间，可以作为各种场景下的占位符使用：
+
+- 节省资源
+- 空结构体本身具备很强的语义，即不需要任何值，仅仅作为占位符
+
+# Go内存分配
+
+分块：
+
+- 提前将内存分块
+  - 调用系统调用mmap()向操作系统申请一大块，例如4MB
+  - 先将内存划分成大块，例如8KB，称作mspan
+  - 再将大块继续划分成特定大小的小块，用于对象分配
+  - noscan mspan：分配不包含指针的对象——GC不需要扫描
+  - scan mspan：分配包含指针的对象——GC需要扫描
+- 对象分配：根据对象的大小，选择最合适的块返回
+
+<img src="golang大总结.assets/image-20230116221751296.png" alt="image-20230116221751296" style="zoom:50%;" />
 
 
 
